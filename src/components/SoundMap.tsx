@@ -448,9 +448,12 @@ export function SoundMap({ userLocation }: SoundMapProps) {
           </h3>
           <div className="grid gap-3 sm:grid-cols-3">
             {nearbyRecommendations.map((loc, index) => (
-              <div
+              <a
                 key={loc.id}
-                className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm border border-blue-100 dark:border-blue-800"
+                href={loc.lees_meer}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="bg-white dark:bg-gray-800 rounded-lg p-3 shadow-sm border border-blue-100 dark:border-blue-800 hover:shadow-md hover:border-blue-300 dark:hover:border-blue-600 transition-all cursor-pointer block"
               >
                 <div className="flex items-start justify-between gap-2 mb-2">
                   <span className="text-lg font-bold text-blue-600 dark:text-blue-400">
@@ -480,7 +483,10 @@ export function SoundMap({ userLocation }: SoundMapProps) {
                     🕐 {loc.openingsuren}
                   </p>
                 )}
-              </div>
+                <span className="text-xs text-blue-600 dark:text-blue-400 mt-2 inline-flex items-center gap-1">
+                  View details →
+                </span>
+              </a>
             ))}
           </div>
           {nearbyRecommendations.length === 0 && (
