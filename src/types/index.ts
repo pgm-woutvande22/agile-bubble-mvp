@@ -54,7 +54,10 @@ export function getOccupancyLevel(occupancy: number, capacity: number): Occupanc
   return 'full'
 }
 
-export function getLocationStatus(sensor: Sensor, capacity: number): LocationStatus {
+export function getLocationStatus(
+  sensor: { currentNoiseLevel: number; currentOccupancy: number },
+  capacity: number
+): LocationStatus {
   const noiseLevel = getNoiseLevel(sensor.currentNoiseLevel)
   const occupancyLevel = getOccupancyLevel(sensor.currentOccupancy, capacity)
   const occupancyPercentage = Math.round((sensor.currentOccupancy / capacity) * 100)

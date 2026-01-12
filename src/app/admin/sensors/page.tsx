@@ -13,6 +13,9 @@ import { NoiseIndicator, OccupancyIndicator } from '@/components/ui/StatusBadge'
 interface SensorWithLocation {
   id: string
   locationId: string
+  deviceId: string | null
+  port: number | null
+  password: string | null
   currentNoiseLevel: number
   currentOccupancy: number
   lastUpdated: string

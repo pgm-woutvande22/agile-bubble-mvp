@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import L from 'leaflet'
+import type L from 'leaflet'
 import { LocationWithSensor, getLocationStatus, getStatusColor } from '@/types'
 
 interface MapViewProps {
@@ -21,18 +21,23 @@ export function MapView({
   const markersRef = useRef<{ [key: string]: L.Marker }>({})
   const containerRef = useRef<HTMLDivElement>(null)
   const [isClient, setIsClient] = useState(false)
+  const [leaflet, setLeaflet] = useState<typeof L | null>(null)
 
   useEffect(() => {
     setIsClient(true)
+    // Dynamically import leaflet only on client
+    import('leaflet').then((L) => {
+      setLeaflet(L.default)
+    })
   }, [])
 
   useEffect(() => {
-    if (!isClient || !containerRef.current || mapRef.current) return
+    if (!isClient || !containerRef.current || mapRef.current || !leaflet) return
 
     // Initialize map centered on Ghent
-    mapRef.current = L.map(containerRef.current).setView([51.0543, 3.7174], 13)
+    mapRef.current = leaflet.map(containerRef.current).setView([51.0543, 3.7174], 13)
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    leaflet.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution:
         '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(mapRef.current)
@@ -43,10 +48,10 @@ export function MapView({
         mapRef.current = null
       }
     }
-  }, [isClient])
+  }, [isClient, leaflet])
 
   useEffect(() => {
-    if (!mapRef.current || !isClient) return
+    if (!mapRef.current || !isClient || !leaflet) return
 
     // Clear existing markers
     Object.values(markersRef.current).forEach((marker) => marker.remove())
@@ -63,7 +68,7 @@ export function MapView({
         : 'gray'
 
       // Create custom icon
-      const icon = L.divIcon({
+      const icon = leaflet.divIcon({
         className: 'custom-marker',
         html: `
           <div style="
@@ -80,7 +85,7 @@ export function MapView({
         iconAnchor: [12, 12],
       })
 
-      const marker = L.marker([location.latitude, location.longitude], { icon })
+      const marker = leaflet.marker([location.latitude, location.longitude], { icon })
         .addTo(mapRef.current!)
         .bindPopup(`
           <div style="min-width: 200px;">
@@ -122,7 +127,7 @@ export function MapView({
 
       markersRef.current[location.id] = marker
     })
-  }, [locations, selectedLocation, onLocationSelect, isClient])
+  }, [locations, selectedLocation, onLocationSelect, isClient, leaflet])
 
   // Center on selected location
   useEffect(() => {
