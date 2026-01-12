@@ -104,7 +104,7 @@ async function syncLocations() {
           created++
         }
       } catch (err) {
-        console.error(`❌ Error processing ${record.naam}:`, err)
+        console.error(`❌ Error processing ${record.titel}:`, err)
       }
     }
 
