@@ -2,6 +2,75 @@
 
 A production-ready SaaS web application for finding and planning study spots in Ghent, Belgium. Built with Next.js 14, TypeScript, Prisma, and PostgreSQL.
 
+🌐 **Live Demo**: [https://agile-bubble-mvp-production.up.railway.app](https://agile-bubble-mvp-production.up.railway.app)
+
+---
+
+## How It Works
+
+Ghent Study Spots helps students find the perfect place to study by providing **real-time information** about noise levels and occupancy at study locations across Ghent.
+
+### The Flow
+
+1. **Browse Locations** - View all study spots on an interactive map or in a list
+2. **Check Status** - See real-time noise levels (quiet/moderate/loud) and available seats
+3. **Plan Your Session** - Create a study plan for a specific time and location
+4. **Get Warnings** - Receive alerts if a location becomes too loud or full
+5. **Save Favorites** - Quick access to your preferred study spots
+
+### Data Sources
+
+- **Locations**: Synced from [Stad Gent Open Data API](https://data.stad.gent/explore/dataset/bloklocaties-gent/) - includes libraries, study halls, and student buildings
+- **Sensor Data**: Simulated noise and occupancy levels (updated every minute)
+
+---
+
+## Site Map
+
+```
+🏠 Homepage (/)
+│   └── Overview, stats, and featured locations
+│
+├── 📍 Locations (/locations)
+│   └── Browse all study spots with filters
+│   └── [id] → Location detail page
+│
+├── 🗺️ Map (/map)
+│   └── Interactive map with all locations
+│   └── Color-coded markers (green/yellow/red)
+│
+├── ❤️ Favorites (/favorites) [Login required]
+│   └── Your saved study spots
+│
+├── 📅 Study Plans (/plans) [Login required]
+│   └── Create and manage study sessions
+│
+├── 📊 Dashboard (/dashboard) [Login required]
+│   └── Personal overview and quick actions
+│
+├── 🔐 Login (/login)
+│   └── Sign in to your account
+│
+├── 📝 Register (/register)
+│   └── Create a new account
+│
+└── ⚙️ Admin (/admin) [Admin only]
+    ├── /admin/locations → Manage locations
+    ├── /admin/sensors → Control sensor values
+    └── /admin/users → View users
+```
+
+---
+
+## Demo Accounts
+
+| Role | Email | Password | Access |
+|------|-------|----------|--------|
+| **Admin** | `admin@ghentstudyspots.be` | `admin123` | Full access + admin panel |
+| **User** | `wout@ghentstudyspots.be` | `wout123` | Standard user features |
+
+---
+
 ## Features
 
 ### For Students (Users)
@@ -91,12 +160,12 @@ A production-ready SaaS web application for finding and planning study spots in 
 
 ### Demo Accounts
 
-After seeding, you can login with:
+After running the setup scripts, you can login with:
 
 | Role | Email | Password |
 |------|-------|----------|
 | Admin | admin@ghentstudyspots.be | admin123 |
-| User | student@ugent.be | user123 |
+| User | wout@ghentstudyspots.be | wout123 |
 
 ## Project Structure
 
@@ -176,7 +245,44 @@ After seeding, you can login with:
 - `GET /api/cron/sync-locations` - Sync from Ghent API (daily)
 - `GET /api/cron/simulate-sensors` - Update sensor values (every minute)
 
-## Deployment to Vercel
+## Deployment to Railway
+
+This project is deployed on [Railway](https://railway.app).
+
+### Setup Steps
+
+1. **Create a Railway account** and connect your GitHub
+
+2. **Create a new project** from your GitHub repo
+
+3. **Add PostgreSQL database**
+   - Click "+ New" → "Database" → "PostgreSQL"
+
+4. **Add environment variables** to your app service:
+   ```
+   DATABASE_URL=${{Postgres.DATABASE_URL}}
+   NEXTAUTH_URL=https://your-app.up.railway.app
+   NEXTAUTH_SECRET=your-secret-key
+   GHENT_API_URL=https://data.stad.gent/api/explore/v2.1/catalog/datasets/bloklocaties-gent/records
+   CRON_SECRET=your-cron-secret
+   ```
+
+5. **Run database migrations** (locally with public DB URL):
+   ```bash
+   DATABASE_URL="your-public-database-url" npx prisma db push
+   ```
+
+6. **Sync locations and create users**:
+   ```bash
+   DATABASE_URL="your-public-database-url" npx tsx scripts/sync-locations.ts
+   DATABASE_URL="your-public-database-url" npx tsx scripts/create-users.ts
+   ```
+
+7. **Generate domain** in Railway Settings → Domains
+
+---
+
+## Deployment to Vercel (Alternative)
 
 1. **Push to GitHub**
    ```bash
