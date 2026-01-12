@@ -1,266 +1,241 @@
-"use client";
+import Link from 'next/link'
+import { Navbar } from '@/components/layout/Navbar'
+import { Footer } from '@/components/layout/Footer'
+import prisma from '@/lib/prisma'
+import { getLocationStatus } from '@/types'
 
-import { useState, useEffect, useCallback } from "react";
-import { useAudioLevel } from "@/hooks/useAudioLevel";
-import { SoundMeter } from "@/components/SoundMeter";
-import { NoiseTips } from "@/components/NoiseTips";
-import { QuietLocations } from "@/components/QuietLocations";
-import { SoundMap } from "@/components/SoundMap";
+async function getStats() {
+  const [locationsCount, usersCount, plansCount] = await Promise.all([
+    prisma.location.count(),
+    prisma.user.count(),
+    prisma.studyPlan.count(),
+  ])
 
-/**
- * Home - Main page for the Sound Bubble application
- * Provides sound level monitoring with tips and location recommendations
- */
-export default function Home() {
-  const {
-    decibels,
-    soundLevel,
-    isMonitoring,
-    isSimulated,
-    error,
-    startMonitoring,
-    stopMonitoring,
-  } = useAudioLevel();
+  const locations = await prisma.location.findMany({
+    include: { sensor: true },
+    take: 6,
+    orderBy: { name: 'asc' },
+  })
 
-  // User location state for sorting nearby locations
-  const [userLocation, setUserLocation] = useState<{
-    lat: number;
-    lon: number;
-  } | null>(null);
+  // Calculate available spots
+  const availableSpots = locations.filter((loc) => {
+    if (!loc.sensor) return false
+    const status = getLocationStatus(loc.sensor, loc.capacity)
+    return status.occupancyLevel !== 'full' && status.noiseLevel !== 'loud'
+  }).length
 
-  /**
-   * Request user's geolocation
-   */
-  const requestLocation = useCallback(() => {
-    if ("geolocation" in navigator) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setUserLocation({
-            lat: position.coords.latitude,
-            lon: position.coords.longitude,
-          });
-        },
-        (error) => {
-          console.log("Geolocation error:", error.message);
-          // Default to Ghent city center if location unavailable
-          setUserLocation({ lat: 51.0543, lon: 3.7174 });
-        }
-      );
-    } else {
-      // Default to Ghent city center
-      setUserLocation({ lat: 51.0543, lon: 3.7174 });
-    }
-  }, []);
+  return {
+    locations: locationsCount,
+    users: usersCount,
+    plans: plansCount,
+    availableSpots,
+    recentLocations: locations,
+  }
+}
 
-  // Request location on mount
-  useEffect(() => {
-    requestLocation();
-  }, [requestLocation]);
-
-  /**
-   * Toggle monitoring on/off
-   */
-  const handleToggleMonitoring = () => {
-    if (isMonitoring) {
-      stopMonitoring();
-    } else {
-      startMonitoring();
-    }
-  };
+export default async function HomePage() {
+  const stats = await getStats()
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-950">
-      {/* Header */}
-      <header className="sticky top-0 z-50 backdrop-blur-md bg-white/80 dark:bg-gray-900/80 border-b border-gray-200 dark:border-gray-800">
-        <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            {/* Logo/Icon */}
-            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-purple-500 flex items-center justify-center">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 text-white"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2}
-                aria-hidden="true"
+    <div className="min-h-screen flex flex-col bg-gray-50">
+      <Navbar />
+
+      {/* Hero Section */}
+      <section className="bg-gradient-to-br from-primary-600 to-primary-800 text-white py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h1 className="text-4xl md:text-5xl font-bold mb-6">
+              Find Your Perfect Study Spot in Ghent
+            </h1>
+            <p className="text-xl text-primary-100 mb-8 max-w-2xl mx-auto">
+              Real-time occupancy and noise levels for study spaces across the
+              city. Plan your study sessions and never waste time again.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link
+                href="/locations"
+                className="bg-white text-primary-700 px-8 py-3 rounded-lg font-semibold hover:bg-primary-50 transition-colors"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"
-                />
-              </svg>
+                Browse Locations
+              </Link>
+              <Link
+                href="/map"
+                className="border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white/10 transition-colors"
+              >
+                View Map
+              </Link>
             </div>
-            <div>
-              <h1 className="text-lg font-bold text-gray-900 dark:text-white">
-                Sound Bubble
-              </h1>
-              <p className="text-xs text-gray-500 dark:text-gray-400">
-                Know your sound environment
+          </div>
+        </div>
+      </section>
+
+      {/* Stats Section */}
+      <section className="py-12 -mt-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="bg-white rounded-xl shadow-sm p-6 text-center">
+              <div className="text-3xl font-bold text-primary-600 mb-1">
+                {stats.locations}
+              </div>
+              <div className="text-gray-500 text-sm">Study Locations</div>
+            </div>
+            <div className="bg-white rounded-xl shadow-sm p-6 text-center">
+              <div className="text-3xl font-bold text-green-600 mb-1">
+                {stats.availableSpots}
+              </div>
+              <div className="text-gray-500 text-sm">Available Now</div>
+            </div>
+            <div className="bg-white rounded-xl shadow-sm p-6 text-center">
+              <div className="text-3xl font-bold text-primary-600 mb-1">
+                {stats.users}
+              </div>
+              <div className="text-gray-500 text-sm">Active Users</div>
+            </div>
+            <div className="bg-white rounded-xl shadow-sm p-6 text-center">
+              <div className="text-3xl font-bold text-primary-600 mb-1">
+                {stats.plans}
+              </div>
+              <div className="text-gray-500 text-sm">Study Plans</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-3xl font-bold text-center text-gray-900 mb-12">
+            Why Use Ghent Study Spots?
+          </h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="bg-white rounded-xl p-6 shadow-sm">
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-4">
+                <span className="text-2xl">🟢</span>
+              </div>
+              <h3 className="font-semibold text-gray-900 text-lg mb-2">
+                Real-Time Status
+              </h3>
+              <p className="text-gray-500">
+                See live noise levels and occupancy for every location. No more
+                arriving to find a crowded, noisy space.
+              </p>
+            </div>
+            <div className="bg-white rounded-xl p-6 shadow-sm">
+              <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center mb-4">
+                <span className="text-2xl">📍</span>
+              </div>
+              <h3 className="font-semibold text-gray-900 text-lg mb-2">
+                Map Integration
+              </h3>
+              <p className="text-gray-500">
+                Find the closest quiet spot with our interactive map. Filter by
+                noise level and availability.
+              </p>
+            </div>
+            <div className="bg-white rounded-xl p-6 shadow-sm">
+              <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center mb-4">
+                <span className="text-2xl">📅</span>
+              </div>
+              <h3 className="font-semibold text-gray-900 text-lg mb-2">
+                Study Planning
+              </h3>
+              <p className="text-gray-500">
+                Plan your study sessions and get smart recommendations based on
+                availability and conditions.
               </p>
             </div>
           </div>
+        </div>
+      </section>
 
-          {/* Status indicator */}
-          <div
-            className={`flex items-center gap-2 text-sm ${
-              isMonitoring
-                ? "text-green-600 dark:text-green-400"
-                : "text-gray-400 dark:text-gray-500"
-            }`}
-          >
-            <span
-              className={`w-2 h-2 rounded-full ${
-                isMonitoring ? "bg-green-500 animate-pulse" : "bg-gray-400"
-              }`}
-              aria-hidden="true"
-            />
-            <span className="hidden sm:inline">
-              {isMonitoring ? "Listening..." : "Inactive"}
-            </span>
+      {/* Recent Locations */}
+      <section className="py-16 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center mb-8">
+            <h2 className="text-2xl font-bold text-gray-900">
+              Popular Locations
+            </h2>
+            <Link
+              href="/locations"
+              className="text-primary-600 hover:text-primary-700 font-medium"
+            >
+              View All →
+            </Link>
+          </div>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {stats.recentLocations.map((location) => {
+              const status = location.sensor
+                ? getLocationStatus(location.sensor, location.capacity)
+                : null
+
+              return (
+                <Link
+                  key={location.id}
+                  href={`/locations/${location.id}`}
+                  className="bg-gray-50 rounded-xl p-5 hover:shadow-md transition-shadow"
+                >
+                  <h3 className="font-semibold text-gray-900 mb-1">
+                    {location.name}
+                  </h3>
+                  <p className="text-gray-500 text-sm mb-3">{location.address}</p>
+                  {status && (
+                    <div className="flex gap-2">
+                      <span
+                        className={`text-xs px-2 py-1 rounded-full ${
+                          status.noiseLevel === 'quiet'
+                            ? 'bg-green-100 text-green-700'
+                            : status.noiseLevel === 'moderate'
+                            ? 'bg-yellow-100 text-yellow-700'
+                            : 'bg-red-100 text-red-700'
+                        }`}
+                      >
+                        {status.noiseLevel === 'quiet'
+                          ? '🟢'
+                          : status.noiseLevel === 'moderate'
+                          ? '🟡'
+                          : '🔴'}{' '}
+                        {status.noiseLevel}
+                      </span>
+                      <span
+                        className={`text-xs px-2 py-1 rounded-full ${
+                          status.occupancyLevel === 'available'
+                            ? 'bg-green-100 text-green-700'
+                            : status.occupancyLevel === 'busy'
+                            ? 'bg-yellow-100 text-yellow-700'
+                            : 'bg-red-100 text-red-700'
+                        }`}
+                      >
+                        {status.availableSeats} seats
+                      </span>
+                    </div>
+                  )}
+                </Link>
+              )
+            })}
           </div>
         </div>
-      </header>
+      </section>
 
-      {/* Main content */}
-      <main className="max-w-4xl mx-auto px-4 py-8 space-y-8">
-        {/* Sound Meter Section */}
-        <section
-          className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6 md:p-8"
-          aria-labelledby="meter-heading"
-        >
-          <h2 id="meter-heading" className="sr-only">
-            Sound Level Meter
+      {/* CTA Section */}
+      <section className="py-16 bg-primary-600">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-3xl font-bold text-white mb-4">
+            Ready to Find Your Study Spot?
           </h2>
-
-          {/* Sound Meter */}
-          <SoundMeter
-            decibels={decibels}
-            soundLevel={soundLevel}
-            isMonitoring={isMonitoring}
-            isSimulated={isSimulated}
-          />
-
-          {/* Error message */}
-          {error && (
-            <div
-              className="mt-4 p-3 bg-amber-50 dark:bg-amber-900/20 rounded-lg text-amber-700 dark:text-amber-400 text-sm text-center"
-              role="alert"
-            >
-              {error}
-            </div>
-          )}
-
-          {/* Start/Stop Button */}
-          <div className="mt-8 flex justify-center">
-            <button
-              onClick={handleToggleMonitoring}
-              className={`
-                px-8 py-4 rounded-full font-semibold text-lg
-                transition-all duration-300 transform hover:scale-105
-                focus:outline-none focus:ring-4 focus:ring-offset-2
-                ${
-                  isMonitoring
-                    ? "bg-red-500 hover:bg-red-600 text-white focus:ring-red-300"
-                    : "bg-gradient-to-r from-blue-500 to-purple-500 hover:from-blue-600 hover:to-purple-600 text-white focus:ring-blue-300"
-                }
-              `}
-              aria-pressed={isMonitoring}
-            >
-              {isMonitoring ? (
-                <span className="flex items-center gap-2">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    aria-hidden="true"
-                  >
-                    <rect x="6" y="4" width="3" height="12" rx="1" />
-                    <rect x="11" y="4" width="3" height="12" rx="1" />
-                  </svg>
-                  Stop Monitoring
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5"
-                    viewBox="0 0 20 20"
-                    fill="currentColor"
-                    aria-hidden="true"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm4 10.93A7.001 7.001 0 0017 8a1 1 0 10-2 0A5 5 0 015 8a1 1 0 00-2 0 7.001 7.001 0 006 6.93V17H6a1 1 0 100 2h8a1 1 0 100-2h-3v-2.07z"
-                      clipRule="evenodd"
-                    />
-                  </svg>
-                  Start Monitoring
-                </span>
-              )}
-            </button>
-          </div>
-        </section>
-
-        {/* Tips Section */}
-        <section
-          className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6 md:p-8"
-          aria-labelledby="tips-heading"
-        >
-          <h2
-            id="tips-heading"
-            className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2"
+          <p className="text-primary-100 mb-8 max-w-xl mx-auto">
+            Join thousands of students who save time finding the perfect place
+            to study. Create an account to save favorites and plan sessions.
+          </p>
+          <Link
+            href="/register"
+            className="inline-block bg-white text-primary-700 px-8 py-3 rounded-lg font-semibold hover:bg-primary-50 transition-colors"
           >
-            <span aria-hidden="true">💡</span>
-            Tips & Recommendations
-          </h2>
-          <NoiseTips soundLevel={soundLevel} isMonitoring={isMonitoring} />
-        </section>
-
-        {/* Sound Map Section */}
-        <section
-          className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6 md:p-8"
-          aria-labelledby="map-heading"
-        >
-          <h2 id="map-heading" className="sr-only">
-            Interactive Sound Map
-          </h2>
-          <SoundMap userLocation={userLocation} />
-        </section>
-
-        {/* Locations Section */}
-        <section
-          className="bg-white dark:bg-gray-800 rounded-3xl shadow-lg p-6 md:p-8"
-          aria-labelledby="locations-heading"
-        >
-          <h2 id="locations-heading" className="sr-only">
-            Quiet Locations
-          </h2>
-          <QuietLocations userLocation={userLocation} />
-        </section>
-      </main>
-
-      {/* Footer */}
-      <footer className="border-t border-gray-200 dark:border-gray-800 mt-12">
-        <div className="max-w-4xl mx-auto px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">
-          <p>
-            Sound Bubble — Helping you find quieter spaces in Ghent
-          </p>
-          <p className="mt-1">
-            Data provided by{" "}
-            <a
-              href="https://data.stad.gent/"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-blue-600 dark:text-blue-400 hover:underline"
-            >
-              Stad Gent Open Data
-            </a>
-          </p>
+            Get Started Free
+          </Link>
         </div>
-      </footer>
+      </section>
+
+      <Footer />
     </div>
-  );
+  )
 }

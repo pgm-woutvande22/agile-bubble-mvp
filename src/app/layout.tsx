@@ -1,38 +1,34 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import "./globals.css";
+import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+import './globals.css'
+import { AuthProvider } from '@/components/providers/AuthProvider'
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
+const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: "Sound Bubble - Know Your Sound Environment",
-  description:
-    "Sound Bubble helps you understand how loud your environment is and suggests ways to find or create quieter spaces in Ghent.",
-  keywords: ["sound", "noise", "decibels", "quiet", "Ghent", "study locations"],
-  authors: [{ name: "Sound Bubble" }],
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
-};
+  title: 'Ghent Study Spots - Find Your Perfect Study Space',
+  description: 'Real-time study spot finder for students in Ghent. Find quiet places to study with live occupancy and noise levels.',
+  keywords: 'study spots, ghent, gent, blokken, bibliotheek, studiezaal, UGent',
+}
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+}: {
+  children: React.ReactNode
+}) {
   return (
-    <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
-        {children}
+    <html lang="nl">
+      <head>
+        <link
+          rel="stylesheet"
+          href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossOrigin=""
+        />
+      </head>
+      <body className={inter.className}>
+        <AuthProvider>{children}</AuthProvider>
       </body>
     </html>
-  );
+  )
 }

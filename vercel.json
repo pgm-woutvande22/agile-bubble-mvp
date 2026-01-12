@@ -1,0 +1,12 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/sync-locations",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/simulate-sensors",
+      "schedule": "*/1 * * * *"
+    }
+  ]
+}
