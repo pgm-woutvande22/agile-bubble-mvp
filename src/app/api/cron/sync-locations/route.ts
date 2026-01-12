@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 
+// Force dynamic - API routes should not be pre-rendered
+export const dynamic = 'force-dynamic'
+
 // This endpoint is called by Vercel Cron to sync locations from Ghent API
 export async function GET(req: NextRequest) {
   try {

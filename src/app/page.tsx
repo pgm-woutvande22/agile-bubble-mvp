@@ -4,6 +4,9 @@ import { Footer } from '@/components/layout/Footer'
 import prisma from '@/lib/prisma'
 import { getLocationStatus } from '@/types'
 
+// Force dynamic rendering - page needs database access
+export const dynamic = 'force-dynamic'
+
 async function getStats() {
   const [locationsCount, usersCount, plansCount] = await Promise.all([
     prisma.location.count(),
