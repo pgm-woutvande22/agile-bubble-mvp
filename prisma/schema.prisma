@@ -42,6 +42,7 @@ model Location {
   type        String?  // bibliotheek, studiezaal, etc.
   website     String?
   openingHours String?
+  imageUrl    String?  // Image URL from Open Data API
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

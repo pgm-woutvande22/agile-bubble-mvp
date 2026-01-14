@@ -1,5 +1,6 @@
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Navbar } from '@/components/layout/Navbar'
 import { Footer } from '@/components/layout/Footer'
 import { StatusBadge, NoiseIndicator, OccupancyIndicator } from '@/components/ui/StatusBadge'
@@ -74,7 +75,20 @@ export default async function LocationPage({ params }: LocationPageProps) {
             {/* Main Content */}
             <div className="lg:col-span-2 space-y-6">
               {/* Header */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+              <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+                {location.imageUrl && (
+                  <div className="relative w-full h-64">
+                    <Image
+                      src={location.imageUrl}
+                      alt={location.name}
+                      fill
+                      className="object-cover"
+                      priority
+                      sizes="(max-width: 1024px) 100vw, 66vw"
+                    />
+                  </div>
+                )}
+                <div className="p-6">
                 <div className="flex justify-between items-start">
                   <div>
                     <h1 className="text-2xl font-bold text-gray-900 mb-2">
@@ -133,6 +147,7 @@ export default async function LocationPage({ params }: LocationPageProps) {
                     <p className="text-gray-700">{location.openingHours}</p>
                   </div>
                 )}
+                </div>
               </div>
 
               {/* Live Status */}

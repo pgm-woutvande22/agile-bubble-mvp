@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { LocationWithSensor, getLocationStatus } from '@/types'
 import { StatusBadge, NoiseIndicator, OccupancyIndicator } from './StatusBadge'
 import { useSession } from 'next-auth/react'
@@ -55,7 +56,19 @@ export function LocationCard({
 
   return (
     <Link href={`/locations/${location.id}`}>
-      <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md hover:border-primary-100 transition-all duration-200 h-full">
+      <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-md hover:border-primary-100 transition-all duration-200 h-full">
+        {location.imageUrl && (
+          <div className="relative w-full h-40">
+            <Image
+              src={location.imageUrl}
+              alt={location.name}
+              fill
+              className="object-cover"
+              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            />
+          </div>
+        )}
+        <div className="p-5">
         <div className="flex justify-between items-start mb-3">
           <div className="flex-1">
             <h3 className="font-semibold text-gray-900 text-lg mb-1 line-clamp-1">
@@ -149,6 +162,7 @@ export function LocationCard({
           <span className="text-primary-600 text-sm font-medium">
             View Details →
           </span>
+        </div>
         </div>
       </div>
     </Link>

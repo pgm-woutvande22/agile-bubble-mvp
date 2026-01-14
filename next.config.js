@@ -6,7 +6,20 @@ const nextConfig = {
     },
   },
   images: {
-    domains: ['data.stad.gent'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'data.stad.gent',
+      },
+      {
+        protocol: 'https',
+        hostname: 'vanherteryck.be',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.stad.gent',
+      },
+    ],
   },
 }
 

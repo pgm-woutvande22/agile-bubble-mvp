@@ -17,6 +17,7 @@ interface GhentRecord {
   label_1?: string
   openingsuren?: string
   teaser_text?: string
+  teaser_img_url?: string
   lees_meer?: string
   geo_punt?: {
     lat: number
@@ -65,6 +66,7 @@ async function syncLocations() {
         website: record.lees_meer || null,
         openingHours: record.openingsuren || null,
         description: record.teaser_text || null,
+        imageUrl: record.teaser_img_url || null,
       }
 
       const externalId = `ghent-${record.id}`
