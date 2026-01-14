@@ -1,6 +1,7 @@
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Navbar } from '@/components/layout/Navbar'
+import { SyncLocationsButton } from '@/components/admin/SyncLocationsButton'
 import prisma from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/session'
 import { Role } from '@prisma/client'
@@ -89,7 +90,7 @@ export default async function AdminPage() {
         </div>
 
         {/* Admin Actions */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <Link
             href="/admin/locations"
             className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md hover:border-primary-200 transition-all"
@@ -136,6 +137,8 @@ export default async function AdminPage() {
               View registered users, manage roles, and review activity.
             </p>
           </Link>
+
+          <SyncLocationsButton />
         </div>
 
         {/* Recent Sync Logs */}

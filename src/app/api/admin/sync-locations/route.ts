@@ -1,21 +1,22 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
+import { getCurrentUser } from '@/lib/session'
+import { Role } from '@prisma/client'
 
 // Force dynamic - API routes should not be pre-rendered
 export const dynamic = 'force-dynamic'
 
-// This endpoint is called by Vercel Cron to sync locations from Ghent API
-export async function GET(req: NextRequest) {
+// Admin endpoint to manually trigger location sync
+export async function POST() {
   try {
-    // Verify cron secret
-    const authHeader = req.headers.get('authorization')
-    if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    // Check admin auth
+    const user = await getCurrentUser()
+    if (!user || user.role !== Role.ADMIN) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const apiUrl = process.env.GHENT_API_URL || 'https://data.stad.gent/api/explore/v2.1/catalog/datasets/bloklocaties-gent/records'
     
-    // Fetch all records
     const response = await fetch(`${apiUrl}?limit=100`)
     
     if (!response.ok) {
@@ -27,10 +28,12 @@ export async function GET(req: NextRequest) {
 
     let created = 0
     let updated = 0
+    let skipped = 0
 
     for (const record of records) {
       // Skip records without coordinates
       if (!record.geo_punt?.lat || !record.geo_punt?.lon) {
+        skipped++
         continue
       }
 
@@ -85,7 +88,7 @@ export async function GET(req: NextRequest) {
         syncType: 'locations',
         status: 'success',
         recordCount: records.length,
-        message: `Created ${created}, Updated ${updated} locations`,
+        message: `Manual sync: Created ${created}, Updated ${updated}, Skipped ${skipped}`,
       },
     })
 
@@ -94,21 +97,13 @@ export async function GET(req: NextRequest) {
       total: records.length,
       created,
       updated,
+      skipped,
     })
   } catch (error) {
     console.error('Sync error:', error)
 
-    // Log error
-    await prisma.syncLog.create({
-      data: {
-        syncType: 'locations',
-        status: 'error',
-        message: error instanceof Error ? error.message : 'Unknown error',
-      },
-    })
-
     return NextResponse.json(
-      { error: 'Failed to sync locations' },
+      { error: 'Failed to sync locations', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     )
   }
